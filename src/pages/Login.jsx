@@ -11,7 +11,8 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL; // https://sankhnadam-server.onrender.com/api/v1
+  const API_BASE = import.meta.env.VITE_API_BASE_URL; 
+  // Example: https://sankhnadam-server.onrender.com/api/v1
 
   // Check for auth token in URL hash (after OAuth redirect)
   useEffect(() => {
@@ -45,7 +46,7 @@ const Login = () => {
 
   // Trigger Google OAuth login
   const handleGoogleLogin = () => {
-    // ✅ Corrected: include /api/v1
+    // ✅ Correct URL: include /api/v1 to match backend route
     window.location.href = `${API_BASE}/auth/google`;
   };
 
