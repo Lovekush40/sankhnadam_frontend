@@ -12,7 +12,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
   try {
-    const res = await fetch("http://localhost:8000/api/v1/contact/send-message", {
+    const res = await fetch("https://sankhnadam-server.onrender.com/api/v1/contact/send-message", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
