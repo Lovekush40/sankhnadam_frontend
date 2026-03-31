@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import peacock_feather from "@/assets/peacock_feather.png";
 import ScrollReveal from "@/components/ScrollReveal";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext"
 
 const Login = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
