@@ -4,14 +4,14 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import peacock_feather from "@/assets/peacock_feather.png";
 import ScrollReveal from "@/components/ScrollReveal";
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL; // ✅ Using .env
+  const API_BASE = import.meta.env.VITE_API_BASE_URL; // https://sankhnadam-server.onrender.com/api/v1
 
   // Check for auth token in URL hash (after OAuth redirect)
   useEffect(() => {
@@ -45,7 +45,8 @@ const Login = () => {
 
   // Trigger Google OAuth login
   const handleGoogleLogin = () => {
-    window.location.href = `${API_BASE.replace("/api/v1", "")}/auth/google`;
+    // ✅ Corrected: include /api/v1
+    window.location.href = `${API_BASE}/auth/google`;
   };
 
   return (
