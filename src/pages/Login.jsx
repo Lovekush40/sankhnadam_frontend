@@ -7,64 +7,69 @@ import ScrollReveal from "@/components/ScrollReveal";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
-  console.log(import.meta.env.VITE_API_BASE_URL)
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check for auth token in URL params (after OAuth redirect)
+  // Check for auth token in URL (after OAuth redirect)
   useEffect(() => {
-  const hash = window.location.hash;
-  const queryString = hash.split("?")[1];
+    // First try hash params: /#/login?token=...
+    const hash = window.location.hash;
+    let queryString = "";
 
-  if (!queryString) return;
+    if (hash.includes("?")) {
+      queryString = hash.split("?")[1];
+    } else if (window.location.search) {
+      // fallback to normal query: /login?token=...
+      queryString = window.location.search.slice(1);
+    }
 
-  const urlParams = new URLSearchParams(queryString);
-  const token = urlParams.get("token");
+    if (!queryString) return;
 
-  if (token) {
-    login(token);
+    const urlParams = new URLSearchParams(queryString);
+    const token = urlParams.get("token");
 
-    // clean URL
-    window.history.replaceState({}, document.title, "/#/");
+    if (token) {
+      login(token);
 
-    navigate("/", { replace: true });
-  }
-}, [login, navigate]);
+      // Clean URL
+      window.history.replaceState({}, document.title, "/#/");
 
-  // Redirect if already authenticated (only after loading is complete)
-  useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      const from = location.state?.from?.pathname || '/';
+      // Redirect to home or intended page
+      const from = location.state?.from?.pathname || "/";
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate]); // Removed location from dependencies
+  }, [login, navigate, location.state]);
+
+  // Redirect if already authenticated (after loading)
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate, location.state]);
 
   const handleGoogleLogin = () => {
-    // Redirect to backend Google OAuth route
-    window.location.href = "https://sankhnadam-server.onrender.com/api/v1/auth/google";
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
+    window.location.href = `${API_BASE}/api/v1/auth/google`;
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <div className="flex-1 flex items-center justify-center pt-16 pb-16 ">
+      <div className="flex-1 flex items-center justify-center pt-16 pb-16">
         <ScrollReveal>
           <div className="w-full max-w-sm mx-auto px-4 mt-6">
             <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 text-center">
-             <div className="flex justify-center mb-4">
-                <img
-                  src={peacock_feather}
-                  alt="Peacock Feather"
-                  className="h-12 w-auto"
-                />
+              <div className="flex justify-center mb-4">
+                <img src={peacock_feather} alt="Peacock Feather" className="h-12 w-auto" />
               </div>
-             <div className="flex flex-col items-center mb-4">
-              <h1 className="font-display text-xl font-semibold text-orange-600 mb-1 text-center">
-                Radhey Radhey!
-              </h1>
-              <span className="w-10 h-0.5 bg-orange-600 rounded-full"></span> {/* subtle line */}
-            </div>
+              <div className="flex flex-col items-center mb-4">
+                <h1 className="font-display text-xl font-semibold text-orange-600 mb-1 text-center">
+                  Radhey Radhey!
+                </h1>
+                <span className="w-10 h-0.5 bg-orange-600 rounded-full"></span>
+              </div>
               <p className="text-gray-600 text-sm mb-8">
                 Sign in to manage your bookings and tour history
               </p>
@@ -94,4 +99,4 @@ const Login = () => {
   );
 };
 
-export default Login
+export default Login;
