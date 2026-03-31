@@ -7,6 +7,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
+  console.log(import.meta.env.VITE_API_BASE_URL)
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
