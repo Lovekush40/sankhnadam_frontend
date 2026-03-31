@@ -14,18 +14,23 @@ const Login = () => {
 
   // Check for auth token in URL params (after OAuth redirect)
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+  const hash = window.location.hash;
+  const queryString = hash.split("?")[1];
 
-    if (token) {
-      login(token);
-      // Clear the token from URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      // Redirect to intended page or home
-      const from = location.state?.from?.pathname || '/';
-      navigate(from, { replace: true });
-    }
-  }, [login, navigate]); // Removed location from dependencies
+  if (!queryString) return;
+
+  const urlParams = new URLSearchParams(queryString);
+  const token = urlParams.get("token");
+
+  if (token) {
+    login(token);
+
+    // clean URL
+    window.history.replaceState({}, document.title, "/#/");
+
+    navigate("/", { replace: true });
+  }
+}, [login, navigate]);
 
   // Redirect if already authenticated (only after loading is complete)
   useEffect(() => {
