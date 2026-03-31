@@ -36,7 +36,7 @@ const Login = () => {
 
   const handleGoogleLogin = () => {
     // Redirect to backend Google OAuth route
-    window.location.href = "http://localhost:8000/api/v1/auth/google";
+    window.location.href = "https://sankhnadam-server.onrender.com/api/v1/auth/google";
   };
 
   return (
