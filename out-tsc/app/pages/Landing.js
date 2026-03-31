@@ -1,0 +1,29 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Link } from "react-router-dom";
+import { usePackages } from "@/hooks/usePackages";
+import PackageCard from "@/components/PackageCard";
+import ScrollReveal from "@/components/ScrollReveal";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+const Landing = () => {
+    const { packages, isLoading, error } = usePackages();
+    const featured = packages.slice(0, 3);
+    if (isLoading) {
+        return _jsx("div", { className: "text-center py-20", children: "Loading packages..." });
+    }
+    if (error) {
+        return _jsx("div", { className: "text-center py-20 text-red-500", children: error });
+    }
+    return (_jsxs("div", { className: "min-h-screen ", children: [_jsx(Navbar, {}), _jsxs("section", { className: "relative h-[90vh] min-h-130 flex items-end overflow-hidden p-3", children: [_jsx("img", { src: "https://merobrajdham.com/wp-content/uploads/al_opt_content/IMAGE/merobrajdham.com/wp-content/uploads/2025/04/Place-To-Visit-In-Brajdham-1.png.bv.webp?bv_host=merobrajdham.com", alt: "art", className: 'absolute inset-0 w-full h-full object-cover' }), _jsx("div", { className: "absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent" }), _jsx("div", { className: "absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" }), _jsxs("div", { className: "relative container pb-16 md:pb-24 z-10", children: [_jsx("h1", { className: "\n              animate-fade-up \n              font-display \n              text-3xl sm:text-4xl md:text-5xl lg:text-6xl \n              font-bold \n              text-white \n              leading-tight \n              max-w-2xl\n              drop-shadow-[0_30px_30px_rgba(0,0,0,0.6)]\n            ", style: { lineHeight: 1.1 }, children: "Discover the Divine Lands of Braj Bhoomi" }), _jsx("p", { className: "animate-fade-up stagger-2 text-gray-100 text-base md:text-lg mt-4 max-w-lg drop-shadow-lg", children: "Spiritual tours to Vrindavan, Mathura, Barsana, Govardhan & Nandgaon \u2014 curated with love and devotion by Sanknadam Tours." }), _jsxs("div", { className: "animate-fade-up stagger-3 flex flex-wrap gap-3 mt-6", children: [_jsx(Link, { to: "/packages", className: "inline-flex items-center px-6 py-3 rounded-lg bg-primary text-primary-foreground  bg-orange-500/90 text-white font-semibold text-sm hover:brightness-110 active:scale-[0.97] transition-all", children: "Explore Packages" }), _jsx(Link, { to: "/contact", className: "inline-flex items-center px-6 py-3 rounded-lg border border-primary-foreground/40 text-primary-foreground font-semibold  text-white/80 text-sm hover:bg-primary-foreground/10 active:scale-[0.97] transition-all", children: "Contact Us" })] })] })] }), _jsx(ScrollReveal, { children: _jsx("section", { className: "bg-card py-10 p-3", children: _jsx("div", { className: "container grid grid-cols-2 md:grid-cols-4 gap-6 text-center", children: [
+                            { num: "1,200+", label: "Happy Travellers" },
+                            { num: "48+", label: "Tours Completed" },
+                            { num: "12", label: "Sacred Destinations" },
+                            { num: "4.9★", label: "Average Rating" },
+                        ].map((s) => (_jsxs("div", { children: [_jsx("div", { className: "font-display text-2xl md:text-3xl font-bold text-primary", children: s.num }), _jsx("div", { className: "text-xs text-muted-foreground mt-1", children: s.label })] }, s.label))) }) }) }), _jsx("section", { className: "py-16 md:py-24 px-3", children: _jsxs("div", { className: "container", children: [_jsxs(ScrollReveal, { children: [_jsx("h2", { className: "font-display text-2xl md:text-3xl font-bold text-foreground text-center mb-2", children: "Popular Tour Packages" }), _jsx("p", { className: "text-muted-foreground text-center mb-10 max-w-md mx-auto", children: "Hand-picked spiritual journeys through the holiest sites of Braj" })] }), _jsx("div", { className: "grid sm:grid-cols-2 lg:grid-cols-3 gap-6", children: featured.map((pkg, i) => (_jsx(ScrollReveal, { delay: i * 100, children: _jsx(PackageCard, { pkg: pkg }) }, pkg.id))) }), _jsx("div", { className: "text-center mt-10", children: _jsx(Link, { to: "/packages", className: "inline-flex items-center px-6 py-3 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm hover:brightness-95 active:scale-[0.97] transition-all", children: "View All Packages \u2192" }) })] }) }), _jsx("section", { className: "bg-card py-16 md:py-24 px-3", children: _jsxs("div", { className: "container", children: [_jsx(ScrollReveal, { children: _jsx("h2", { className: "font-display text-2xl md:text-3xl font-bold text-foreground text-center mb-10", children: "Why Travel With Us" }) }), _jsx("div", { className: "grid sm:grid-cols-2 lg:grid-cols-4 gap-6", children: [
+                                { icon: "🛕", title: "Expert Guides", desc: "Local pandits and scholars who know every leela sthal." },
+                                { icon: "🍃", title: "Pure Veg Meals", desc: "Sattvic home-cooked Braj cuisine included in every tour." },
+                                { icon: "🚐", title: "Comfortable Travel", desc: "AC vehicles, clean stays, hassle-free arrangements." },
+                                { icon: "💰", title: "Affordable Prices", desc: "Budget-friendly packages with no hidden charges." },
+                            ].map((item, i) => (_jsx(ScrollReveal, { delay: i * 80, children: _jsxs("div", { className: "bg-background rounded-lg p-6 shadow-sm text-center", children: [_jsx("div", { className: "text-3xl mb-3", children: item.icon }), _jsx("h3", { className: "font-display text-base font-bold mb-1", children: item.title }), _jsx("p", { className: "text-sm text-muted-foreground", children: item.desc })] }) }, item.title))) })] }) }), _jsx(Footer, {})] }));
+};
+export default Landing;
