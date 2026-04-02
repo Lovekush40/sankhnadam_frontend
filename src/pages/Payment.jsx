@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { useState } from "react";
 
 const Payment = () => {
   const [loading, setLoading] = useState(false);
@@ -19,33 +20,31 @@ const Payment = () => {
     });
 
     const data = await res.json();
-    const order = data.data;
+    const order = data.data || data;
 
     const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: order.amount,
-      currency: "INR",
-      name: "Sankhnadam Tours",
-      description: "Advance Booking",
-      order_id: order.id,
+    key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+    amount: order.amount,
+    currency: "INR",
+    name: "Sankhnadam Tours",
+    description: "Advance Booking",
+    order_id: order.id,
 
-      handler: async function (response) {
+    handler: async function (response) {
         const verifyRes = await fetch(`${API_BASE}/verify-payment`, {
-          method: "POST",
-          headers: {
+        method: "POST",
+        headers: {
             "Content-Type": "application/json",
-          },
-          body: JSON.stringify(response),
+        },
+        body: JSON.stringify(response),
         });
 
-        const result = await verifyRes.json();
-
-        if (result.success) {
-          window.location.href = "/success"; // ✅ redirect
+        if (verifyRes.status === 200) {
+        window.location.href = "/#/success"; // ✅ FIX
         } else {
-          alert("Payment verification failed ❌");
+        alert("Payment verification failed ❌");
         }
-      },
+    },
 
       theme: {
         color: "#f97316",
