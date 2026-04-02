@@ -11,14 +11,17 @@ const DimondLine = React.forwardRef<HTMLDivElement, DimondLineProps>(
       <div
         ref={ref}
         className={cn(
-          "relative flex items-center justify-center mt-4 mb-4",
+          "relative flex items-center justify-center my-4",
           className
         )}
         {...props}
       >
-        <div className="w-40 h-[2px] bg-[#065C77]" />
-        <div className="absolute mt-[-4px]">
-          <div className="w-3 h-3 rotate-45 bg-[#065C77]" />
+        {/* Line */}
+        <div className="w-40 h-[2px] bg-orange-500" />
+
+        {/* Diamond */}
+        <div className="absolute flex items-center justify-center">
+          <div className="w-3 h-3 rotate-45 bg-orange-500" />
         </div>
       </div>
     );
