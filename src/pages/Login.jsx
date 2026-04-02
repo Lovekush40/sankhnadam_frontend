@@ -5,6 +5,7 @@ import Footer from "@/components/Footer";
 import peacock_feather from "@/assets/peacock_feather.png";
 import ScrollReveal from "@/components/ScrollReveal";
 import { useAuth } from "@/contexts/AuthContext";
+import DimondLine from "@/components/ui/DimondLine";
 
 const Login = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -67,7 +68,7 @@ const handleGoogleLogin = () => {
                 <h1 className="font-display text-xl font-semibold text-orange-600 mb-1 text-center">
                   Radhey Radhey!
                 </h1>
-                <span className="w-10 h-0.5 bg-orange-600 rounded-full"></span>
+                <DimondLine className="mx-auto"/>
               </div>
               <p className="text-gray-600 text-sm mb-8">
                 Sign in to manage your bookings and tour history
@@ -101,7 +102,7 @@ const handleGoogleLogin = () => {
               <p className="text-xs text-gray-500 mt-6">
                 By signing in, you agree to our Terms of Service and Privacy Policy
               </p>
-            </div>
+            </div><span className="w-10 h-0.5 bg-orange-600 rounded-full"></span>
           </div>
         </ScrollReveal>
       </div>
