@@ -12,9 +12,10 @@ import PackageDetail from "./pages/PackageDetail";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Admin from "./pages/Admin";
-// import Payment from "./pages/Payment";
+import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 import Success from "./pages/Success";
+
 
 const queryClient = new QueryClient();
 
@@ -33,7 +34,7 @@ const App = () => (
             <Route path="/packages/:id" element={<ProtectedRoute><PackageDetail /></ProtectedRoute>} />
             <Route path="/contact" element={<ProtectedRoute><Contact /></ProtectedRoute>} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-            {/* <Route path="/payment/:id" element={<ProtectedRoute><Payment /></ProtectedRoute>} /> */}
+            <Route path="/payment/:id" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
