@@ -21,7 +21,7 @@ const Payment = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${authToken}`,
       },
       body: JSON.stringify({ packageId: id }),
     });
