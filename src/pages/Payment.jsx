@@ -26,10 +26,14 @@ const Payment = () => {
       body: JSON.stringify({ packageId: id }),
     });
 
-    console.log(res);
-    if (!res.success) {
-      throw new Error("Failed to create order");
-    }
+    console.log("STATUS:", res.status);
+
+const text = await res.text();
+console.log("RAW RESPONSE:", text);
+
+if (!res.ok) {
+  throw new Error(`Error ${res.status}: ${text}`);
+}
 
     const data = await res.json();
     const order = data.data || data;
