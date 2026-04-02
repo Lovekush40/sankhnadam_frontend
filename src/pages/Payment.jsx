@@ -44,22 +44,29 @@ const Payment = () => {
       name: "Sankhnadam Tours",
       description: "Advance Booking",
       order_id: order.id,
+handler: async function (response) {
+  console.log("RAZORPAY RESPONSE:", response);
 
-      handler: async function (response) {
-        const verifyRes = await fetch(`${API_BASE}/payment/verify-payment`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(response),
-        });
+  const verifyRes = await fetch(`${API_BASE}/payment/verify-payment`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      razorpay_payment_id: response.razorpay_payment_id,
+      razorpay_order_id: response.razorpay_order_id,
+      razorpay_signature: response.razorpay_signature,
+    }),
+  });
 
-        if (verifyRes.status === 200) {
-          window.location.href = "/#/success";
-        } else {
-          alert("Payment verification failed ❌");
-        }
-      },
+  const result = await verifyRes.json();
+
+  if (verifyRes.status === 200) {
+    window.location.href = "/#/success";
+  } else {
+    alert(result.message || "Payment verification failed ❌");
+  }
+},
 
       theme: {
         color: "#f97316",
