@@ -26,6 +26,7 @@ const Payment = () => {
       body: JSON.stringify({ packageId: id }),
     });
 
+    console.log(res);
     if (!res.success) {
       throw new Error("Failed to create order");
     }
