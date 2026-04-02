@@ -44,11 +44,10 @@ const Login = () => {
     }
   }, [isAuthenticated, isLoading, navigate, location.state]);
 
-  // Trigger Google OAuth login
-  const handleGoogleLogin = () => {
-    // ✅ Correct URL: include /api/v1 to match backend route
-    window.location.href = `${API_BASE}/auth/google`;
-  };
+const handleGoogleLogin = () => {
+  if (!API_BASE) return;
+  window.location.href = `${API_BASE}/auth/google`;
+};
 
   return (
     <div className="min-h-screen flex flex-col">

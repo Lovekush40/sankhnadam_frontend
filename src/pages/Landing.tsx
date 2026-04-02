@@ -5,6 +5,7 @@ import PackageCard from "@/components/PackageCard";
 import ScrollReveal from "@/components/ScrollReveal";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import DimondLine from "@/components/ui/DimondLine";
 
 const Landing = () => {
   const { packages, isLoading, error } = usePackages();
@@ -91,10 +92,13 @@ const Landing = () => {
       {/* Featured Packages */}
       <section className="py-16 md:py-24 px-3">
         <div className="container">
-          <ScrollReveal>
+            <ScrollReveal>
             <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground text-center mb-2">
               Popular Tour Packages
             </h2>
+
+            <DimondLine className="mx-auto" />
+
             <p className="text-muted-foreground text-center mb-10 max-w-md mx-auto">
               Hand-picked spiritual journeys through the holiest sites of Braj
             </p>
