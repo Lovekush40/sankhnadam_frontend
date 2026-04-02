@@ -6,45 +6,60 @@ const Payment = () => {
   const { id } = useParams(); // packageId
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-  const handlePayment = async () => {
+ const handlePayment = async () => {
   try {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
     setLoading(true);
 
-    const res = await fetch(`${API_BASE}/create-order`, {
+    const res = await fetch(`${API_BASE}/payment/create-order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ packageId: id }),
     });
 
+    if (!res.ok) {
+      throw new Error("Failed to create order");
+    }
+
     const data = await res.json();
     const order = data.data || data;
 
-    const options = {
-    key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-    amount: order.amount,
-    currency: "INR",
-    name: "Sankhnadam Tours",
-    description: "Advance Booking",
-    order_id: order.id,
+    if (!order?.id) {
+      throw new Error("Invalid order response");
+    }
 
-    handler: async function (response) {
-        const verifyRes = await fetch(`${API_BASE}/verify-payment`, {
-        method: "POST",
-        headers: {
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: order.amount,
+      currency: "INR",
+      name: "Sankhnadam Tours",
+      description: "Advance Booking",
+      order_id: order.id,
+
+      handler: async function (response) {
+        const verifyRes = await fetch(`${API_BASE}/payment/verify-payment`, {
+          method: "POST",
+          headers: {
             "Content-Type": "application/json",
-        },
-        body: JSON.stringify(response),
+          },
+          body: JSON.stringify(response),
         });
 
         if (verifyRes.status === 200) {
-        window.location.href = "/#/success"; // ✅ FIX
+          window.location.href = "/#/success";
         } else {
-        alert("Payment verification failed ❌");
+          alert("Payment verification failed ❌");
         }
-    },
+      },
 
       theme: {
         color: "#f97316",
@@ -61,7 +76,7 @@ const Payment = () => {
 
   } catch (err) {
     console.error(err);
-    alert("Something went wrong");
+    alert(err.message || "Something went wrong");
   } finally {
     setLoading(false);
   }
