@@ -4,8 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 import { ShieldCheck, CreditCard } from "lucide-react";
-import { saveBooking } from "./MyBookings";
-import { usePackages } from "@/hooks/usePackages"; // use your API hook
+import { usePackages } from "@/hooks/usePackages";
 
 declare global {
   interface Window {
@@ -17,12 +16,10 @@ const Payment = () => {
   const { id } = useParams();
   const { packages, isLoading } = usePackages(); // fetch from API
   const [form, setForm] = useState({ name: "", email: "", phone: "", date: "", travellers: "1" });
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
-  const pkg = packages.find((p) => p.id === id); // pick package from API
+  const pkg = packages.find((p) => p.id === id);
 
   const advanceAmount = pkg ? Math.round(pkg.price * 0.3) : 0;
   const travellers = parseInt(form.travellers) || 1;
@@ -49,6 +46,7 @@ const Payment = () => {
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) throw new Error("Failed to load Razorpay SDK");
 
+      // Call your backend API to create order
       const res = await fetch(`${API_BASE}/payment/create-order`, {
         method: "POST",
         headers: {
@@ -64,6 +62,7 @@ const Payment = () => {
 
       if (!order?.id) throw new Error("Invalid order response");
 
+      // Razorpay options
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
@@ -89,24 +88,8 @@ const Payment = () => {
 
           const result = await verifyRes.json();
 
-          if (verifyRes.status === 200 && pkg) {
-            saveBooking({
-              id: crypto.randomUUID(),
-              packageId: pkg.id,
-              packageTitle: pkg.title,
-              packageImage: pkg.image,
-              location: pkg.location,
-              duration: pkg.duration,
-              name: form.name,
-              email: form.email,
-              phone: form.phone,
-              date: form.date,
-              travellers,
-              advancePaid: totalAdvance,
-              totalPrice: pkg.price * travellers,
-              bookedAt: new Date().toISOString(),
-            });
-            setSubmitted(true);
+          if (verifyRes.status === 200) {
+            window.location.href = "/#/success";
           } else {
             alert(result.message || "Payment verification failed ❌");
           }
@@ -134,33 +117,6 @@ const Payment = () => {
           <h1 className="font-display text-2xl font-bold mb-2">Package not found</h1>
           <Link to="/packages" className="text-primary underline">← Back to packages</Link>
         </div>
-      </div>
-    );
-  }
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center pt-16">
-          <ScrollReveal>
-            <div className="text-center max-w-md mx-auto px-4">
-              <span className="text-5xl block mb-4">🎉</span>
-              <h1 className="font-display text-2xl font-bold mb-2">Booking Confirmed!</h1>
-              <p className="text-muted-foreground mb-6">
-                Your advance of ₹{totalAdvance.toLocaleString("en-IN")} for <strong>{pkg.title}</strong> has been received.
-                We'll send confirmation details to your email. Radhe Radhe! 🙏
-              </p>
-              <Link
-                to="/packages"
-                className="inline-flex items-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm"
-              >
-                Browse More Packages
-              </Link>
-            </div>
-          </ScrollReveal>
-        </div>
-        <Footer />
       </div>
     );
   }
