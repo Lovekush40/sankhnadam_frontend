@@ -11,7 +11,7 @@ const MyBookings = () => {
     const fetchBookings = async () => {
       try {
         const token = localStorage.getItem("authToken"); // JWT token
-        const res = await axios.get(`${API_BASE}/bookings/my-booking`, {
+        const res = await axios.get(`${API_BASE}/bookings/my-bookings`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
