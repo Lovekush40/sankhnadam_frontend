@@ -7,6 +7,7 @@ const navLinks = [
   { to: "/", label: "Home" },
   { to: "/packages", label: "Packages" },
   { to: "/contact", label: "Contact" },
+  { to: "/bookings/my-booking", label: "My Bookings" },
 ];
 
 const Navbar = () => {

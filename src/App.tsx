@@ -15,7 +15,7 @@ import Admin from "./pages/Admin";
 import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 import Success from "./pages/Success";
-
+import MyBookings from "./pages/MyBookings"
 
 const queryClient = new QueryClient();
 
@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/contact" element={<ProtectedRoute><Contact /></ProtectedRoute>} />
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
             <Route path="/payment/:id" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+            <Route path="/bookings/payment" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
