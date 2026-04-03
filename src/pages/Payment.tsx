@@ -23,6 +23,8 @@ const Payment = () => {
     travellers: "1",
   });
   const [loading, setLoading] = useState(false);
+  // Stores the advance amount returned by the backend after create-order
+  const [orderAmount, setOrderAmount] = useState<number | null>(null);
 
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -61,7 +63,7 @@ const Payment = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ packageId: id }),
+        body: JSON.stringify({ packageId: id, travellers }),
       });
 
       if (!res.ok) {
@@ -74,6 +76,9 @@ const Payment = () => {
       if (!order?.id) {
         throw new Error("Invalid order response");
       }
+
+      // order.amount is in paise — convert to rupees for display
+      setOrderAmount(Math.round(order.amount / 100));
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -230,9 +235,10 @@ const Payment = () => {
                       min={1}
                       max={10}
                       value={form.travellers}
-                      onChange={(e) =>
-                        setForm({ ...form, travellers: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setForm({ ...form, travellers: e.target.value });
+                        setOrderAmount(null); // reset so summary shows "—" until next submit
+                      }}
                       className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition"
                     />
                   </div>
@@ -295,12 +301,16 @@ const Payment = () => {
 
                   <div className="border-t border-border pt-4 space-y-2 text-sm">
                     <div className="flex justify-between text-muted-foreground">
-                      <span>Package amount</span>
-                      <span>As per package</span>
+                      <span>Travellers</span>
+                      <span>{travellers}</span>
                     </div>
                     <div className="flex justify-between font-semibold text-primary">
                       <span>Advance (30%)</span>
-                      <span>Via Razorpay</span>
+                      <span>
+                        {orderAmount !== null
+                          ? `₹${orderAmount.toLocaleString("en-IN")}`
+                          : "Calculated at checkout"}
+                      </span>
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground border-t border-border pt-2">
                       <span>Balance due on tour day</span>
