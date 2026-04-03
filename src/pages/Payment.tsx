@@ -35,6 +35,7 @@ const Payment = () => {
 
   const [pkg, setPkg] = useState<PackageInfo | null>(null);
   const [pkgLoading, setPkgLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -43,16 +44,13 @@ const Payment = () => {
     date: "",
     travellers: "1",
   });
-  const [loading, setLoading] = useState(false);
 
-  const travellers = Math.max(1, parseInt(form.travellers) || 1);
-
-  // ── Derived amounts (live, from pkg.price × travellers) ────────────────────
+  const travellers   = Math.max(1, parseInt(form.travellers) || 1);
   const totalAmount  = pkg ? pkg.price * travellers : 0;
   const advanceAmount = pkg ? Math.round(totalAmount * 0.3) : 0;
   const balanceAmount = totalAmount - advanceAmount;
 
-  // ── Fetch package info on mount ─────────────────────────────────────────────
+  // Fetch package info so amounts show before paying
   useEffect(() => {
     if (!id) return;
     const fetchPkg = async () => {
@@ -69,29 +67,23 @@ const Payment = () => {
     fetchPkg();
   }, [id]);
 
-  // ── Razorpay script loader ──────────────────────────────────────────────────
   const loadRazorpayScript = (): Promise<boolean> =>
     new Promise((resolve) => {
       if (window.Razorpay) { resolve(true); return; }
       const script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
+      script.onload  = () => resolve(true);
       script.onerror = () => resolve(false);
       document.body.appendChild(script);
     });
 
-  // ── Submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const token = localStorage.getItem("authToken");
-    if (!token) {
-      alert("Please login first");
-      return;
-    }
+    if (!token) { alert("Please login first"); return; }
 
     setLoading(true);
-
     try {
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) throw new Error("Failed to load Razorpay SDK");
@@ -102,14 +94,18 @@ const Payment = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ packageId: id, persons: travellers }),
+        // ✅ Send travelDate so backend stores it on the booking
+        body: JSON.stringify({
+          packageId: id,
+          persons: travellers,
+          travelDate: form.date,
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to create order");
 
-      const data = await res.json();
+      const data  = await res.json();
       const order = data.data || data;
-
       if (!order?.id) throw new Error("Invalid order response");
 
       const options = {
@@ -119,26 +115,19 @@ const Payment = () => {
         name: "Sankhnadam Tours",
         description: `Advance – ${pkg?.title ?? "Tour Package"}`,
         order_id: order.id,
-        prefill: {
-          name: form.name,
-          email: form.email,
-          contact: form.phone,
-        },
+        prefill: { name: form.name, email: form.email, contact: form.phone },
         handler: async function (response: any) {
           console.log("RAZORPAY RESPONSE:", response);
-
           const verifyRes = await fetch(`${API_BASE}/payment/verify-payment`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
+              razorpay_order_id:   response.razorpay_order_id,
+              razorpay_signature:  response.razorpay_signature,
             }),
           });
-
           const result = await verifyRes.json();
-
           if (verifyRes.status === 200) {
             window.location.href = "/#/success";
           } else {
@@ -149,9 +138,7 @@ const Payment = () => {
       };
 
       const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", (response: any) => {
-        alert(response.error.description);
-      });
+      rzp.on("payment.failed", (r: any) => alert(r.error.description));
       rzp.open();
     } catch (err: any) {
       console.error(err);
@@ -161,7 +148,6 @@ const Payment = () => {
     }
   };
 
-  // ── Package loading skeleton ────────────────────────────────────────────────
   if (pkgLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -174,7 +160,6 @@ const Payment = () => {
     );
   }
 
-  // ── Package not found ───────────────────────────────────────────────────────
   if (!pkg) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -182,9 +167,7 @@ const Payment = () => {
         <div className="flex-1 flex items-center justify-center pt-24">
           <div className="text-center">
             <p className="text-2xl font-bold mb-2">Package not found</p>
-            <a href="/packages" className="text-orange-500 underline">
-              ← Back to packages
-            </a>
+            <a href="/packages" className="text-orange-500 underline">← Back to packages</a>
           </div>
         </div>
         <Footer />
@@ -192,15 +175,12 @@ const Payment = () => {
     );
   }
 
-  // ── Main render ─────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-
       <div className="pt-24 pb-16 px-4">
         <div className="max-w-3xl mx-auto">
 
-          {/* Header */}
           <ScrollReveal>
             <h1 className="font-display text-2xl md:text-3xl font-bold text-center mb-1 text-foreground">
               Complete Your Booking
@@ -213,23 +193,19 @@ const Payment = () => {
 
           <div className="grid md:grid-cols-5 gap-6">
 
-            {/* ── Left: Form ── */}
+            {/* ── Form ── */}
             <ScrollReveal className="md:col-span-3 order-2 md:order-1">
               <form
                 onSubmit={handleSubmit}
                 className="rounded-xl p-6 shadow-md border border-border bg-card space-y-4"
-                style={{ borderColor: "hsl(var(--border))" }}
               >
                 <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
                   <CreditCard size={18} className="text-orange-500" />
                   Traveller Details
                 </h2>
 
-                {/* Name */}
                 <div>
-                  <label className="text-sm font-medium block mb-1 text-foreground">
-                    Full Name
-                  </label>
+                  <label className="text-sm font-medium block mb-1 text-foreground">Full Name</label>
                   <input
                     required
                     value={form.name}
@@ -239,12 +215,9 @@ const Payment = () => {
                   />
                 </div>
 
-                {/* Email + Phone */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium block mb-1 text-foreground">
-                      Email
-                    </label>
+                    <label className="text-sm font-medium block mb-1 text-foreground">Email</label>
                     <input
                       required
                       type="email"
@@ -255,9 +228,7 @@ const Payment = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium block mb-1 text-foreground">
-                      Phone
-                    </label>
+                    <label className="text-sm font-medium block mb-1 text-foreground">Phone</label>
                     <input
                       required
                       value={form.phone}
@@ -268,57 +239,41 @@ const Payment = () => {
                   </div>
                 </div>
 
-                {/* Date + Travellers */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium block mb-1 text-foreground">
-                      Preferred Date
-                    </label>
+                    <label className="text-sm font-medium block mb-1 text-foreground">Travel Date</label>
                     <input
                       required
                       type="date"
                       value={form.date}
+                      min={new Date().toISOString().split("T")[0]}
                       onChange={(e) => setForm({ ...form, date: e.target.value })}
                       className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 transition"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium block mb-1 text-foreground">
-                      Travellers
-                    </label>
+                    <label className="text-sm font-medium block mb-1 text-foreground">Travellers</label>
                     <input
                       type="number"
                       min={1}
                       max={10}
                       value={form.travellers}
-                      onChange={(e) =>
-                        setForm({ ...form, travellers: e.target.value })
-                      }
+                      onChange={(e) => setForm({ ...form, travellers: e.target.value })}
                       className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 transition"
                     />
                   </div>
                 </div>
 
-                {/* Pay button */}
                 <button
                   type="submit"
                   disabled={loading}
                   className="w-full py-3 rounded-lg font-semibold text-sm transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: "#f97316",
-                    color: "#ffffff",
-                  }}
+                  style={{ backgroundColor: "#f97316", color: "#ffffff" }}
                 >
                   {loading ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Processing…
-                    </>
+                    <><Loader2 size={16} className="animate-spin" /> Processing…</>
                   ) : (
-                    <>
-                      <IndianRupee size={15} />
-                      Pay ₹{advanceAmount.toLocaleString("en-IN")} Advance
-                    </>
+                    <><IndianRupee size={15} /> Pay ₹{advanceAmount.toLocaleString("en-IN")} Advance</>
                   )}
                 </button>
 
@@ -329,33 +284,25 @@ const Payment = () => {
               </form>
             </ScrollReveal>
 
-            {/* ── Right: Summary ── */}
+            {/* ── Summary ── */}
             <ScrollReveal className="md:col-span-2 order-1 md:order-2" delay={100}>
               <div className="rounded-xl shadow-md border border-border bg-card overflow-hidden">
-
-                {/* Package image */}
                 {pkg.image && (
                   <div className="relative h-40 w-full">
                     <img
                       src={pkg.image}
                       alt={pkg.title}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-3 left-3 right-3">
-                      <p className="text-white font-bold text-sm leading-snug line-clamp-2">
-                        {pkg.title}
-                      </p>
+                      <p className="text-white font-bold text-sm leading-snug line-clamp-2">{pkg.title}</p>
                     </div>
                   </div>
                 )}
 
                 <div className="p-4 space-y-4">
-
-                  {/* Package meta */}
                   <div className="space-y-1.5">
                     {pkg.location && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -372,11 +319,7 @@ const Payment = () => {
                     {form.date && (
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Calendar size={12} className="text-orange-500 shrink-0" />
-                        {new Date(form.date).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
+                        {new Date(form.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -385,40 +328,25 @@ const Payment = () => {
                     </div>
                   </div>
 
-                  {/* Price breakdown — live, updates as travellers changes */}
+                  {/* Live price breakdown */}
                   <div className="border-t border-border pt-3 space-y-2">
                     <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>
-                        ₹{pkg.price.toLocaleString("en-IN")} × {travellers}
-                      </span>
-                      <span className="text-foreground font-medium">
-                        ₹{totalAmount.toLocaleString("en-IN")}
-                      </span>
+                      <span>₹{pkg.price.toLocaleString("en-IN")} × {travellers}</span>
+                      <span className="text-foreground font-medium">₹{totalAmount.toLocaleString("en-IN")}</span>
                     </div>
-
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Advance (30%)</span>
-                      <span
-                        className="font-bold text-base"
-                        style={{ color: "#f97316" }}
-                      >
+                      <span className="font-bold text-base" style={{ color: "#f97316" }}>
                         ₹{advanceAmount.toLocaleString("en-IN")}
                       </span>
                     </div>
-
                     <div className="flex justify-between text-xs text-muted-foreground border-t border-border pt-2">
                       <span>Balance on tour day</span>
-                      <span className="font-medium text-foreground">
-                        ₹{balanceAmount.toLocaleString("en-IN")}
-                      </span>
+                      <span className="font-medium text-foreground">₹{balanceAmount.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
 
-                  {/* Info note */}
-                  <div
-                    className="rounded-lg p-3 text-xs text-muted-foreground leading-relaxed"
-                    style={{ backgroundColor: "rgba(249,115,22,0.07)" }}
-                  >
+                  <div className="rounded-lg p-3 text-xs text-muted-foreground leading-relaxed" style={{ backgroundColor: "rgba(249,115,22,0.07)" }}>
                     💡 Advance secures your booking. Remaining paid on tour day. Radhe Radhe! 🙏
                   </div>
                 </div>
@@ -428,7 +356,6 @@ const Payment = () => {
           </div>
         </div>
       </div>
-
       <Footer />
     </div>
   );
