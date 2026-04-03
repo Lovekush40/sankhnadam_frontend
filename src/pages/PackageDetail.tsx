@@ -195,7 +195,7 @@ const pkg = packages.find((p) => p.id === id);
 
                 {/* Book Now */}
                 <Link
-                  to={`#/payment/${pkg.id}`}
+                  to={`/payment/${pkg.id}`}
                   className="block w-full text-center py-3 md:py-4 rounded-lg bg-orange-600 text-white font-semibold text-sm md:text-base hover:bg-orange-700 active:scale-95 transition-all"
                 >
                   Book Now — Pay ₹{Math.round(pkg.price * 0.3).toLocaleString("en-IN")} to Reserve

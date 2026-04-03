@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 const Footer = () => (
-  <footer className="bg-foreground text-primary-foreground">
+  <footer className="bg-[hsl(20_20%_14%)] text-[hsl(36_33%_97%)] p-4">
     <div className="container py-12 md:py-16 px-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <div>
