@@ -10,7 +10,7 @@ export interface Booking {
   _id: string;
   packageId: string;
   packageName: string;
-  packageImage?: string; // optional
+  packageImage?: string;
   location?: string;
   duration?: string;
   name?: string;
@@ -52,12 +52,13 @@ const MyBookings = () => {
   }, []);
 
   const handleDelete = async (_id: string) => {
+    if (!window.confirm("Are you sure you want to delete this booking?")) return;
     try {
       const token = localStorage.getItem("authToken");
       await axios.delete(`${API_BASE}/bookings/${_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setBookings(bookings.filter((b) => b._id !== _id));
+      setBookings((prev) => prev.filter((b) => b._id !== _id));
     } catch (err) {
       console.error("Error deleting booking:", err);
     }
@@ -194,7 +195,13 @@ const MyBookings = () => {
                               year: "numeric",
                             })}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                          <span
+                            className={`px-2 py-0.5 rounded-full ${
+                              booking.paymentStatus === "PAID"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-yellow-100 text-yellow-700"
+                            } font-medium text-xs`}
+                          >
                             {booking.paymentStatus?.toUpperCase() ?? "PENDING"}
                           </span>
                         </div>
