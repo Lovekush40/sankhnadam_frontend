@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { tourPackages } from "@/data/packages";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 import { ShieldCheck, CreditCard } from "lucide-react";
 import { saveBooking } from "./MyBookings";
-import { getPackages } from "@/hooks/usePackages";
+import { usePackages } from "@/hooks/usePackages"; // use your API hook
 
 declare global {
   interface Window {
@@ -16,13 +15,117 @@ declare global {
 
 const Payment = () => {
   const { id } = useParams();
-  const allPackages = getPackages();
-  const pkg = allPackages.find((p) => p.id === id) || tourPackages.find((p) => p.id === id);
+  const { packages, isLoading } = usePackages(); // fetch from API
   const [form, setForm] = useState({ name: "", email: "", phone: "", date: "", travellers: "1" });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+  const pkg = packages.find((p) => p.id === id); // pick package from API
+
+  const advanceAmount = pkg ? Math.round(pkg.price * 0.3) : 0;
+  const travellers = parseInt(form.travellers) || 1;
+  const totalAdvance = advanceAmount * travellers;
+
+  const loadRazorpayScript = (): Promise<boolean> =>
+    new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem("authToken");
+    if (!token) return alert("Please login first");
+
+    setLoading(true);
+
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) throw new Error("Failed to load Razorpay SDK");
+
+      const res = await fetch(`${API_BASE}/payment/create-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ packageId: id }),
+      });
+
+      if (!res.ok) throw new Error("Failed to create order");
+      const data = await res.json();
+      const order = data.data || data;
+
+      if (!order?.id) throw new Error("Invalid order response");
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: "INR",
+        name: "Sankhnadam Tours",
+        description: `Advance Booking – ${pkg?.title}`,
+        order_id: order.id,
+        prefill: {
+          name: form.name,
+          email: form.email,
+          contact: form.phone,
+        },
+        handler: async function (response: any) {
+          const verifyRes = await fetch(`${API_BASE}/payment/verify-payment`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
+
+          const result = await verifyRes.json();
+
+          if (verifyRes.status === 200 && pkg) {
+            saveBooking({
+              id: crypto.randomUUID(),
+              packageId: pkg.id,
+              packageTitle: pkg.title,
+              packageImage: pkg.image,
+              location: pkg.location,
+              duration: pkg.duration,
+              name: form.name,
+              email: form.email,
+              phone: form.phone,
+              date: form.date,
+              travellers,
+              advancePaid: totalAdvance,
+              totalPrice: pkg.price * travellers,
+              bookedAt: new Date().toISOString(),
+            });
+            setSubmitted(true);
+          } else {
+            alert(result.message || "Payment verification failed ❌");
+          }
+        },
+        theme: { color: "#f97316" },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", (response: any) => alert(response.error.description));
+      rzp.open();
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   if (!pkg) {
     return (
@@ -34,128 +137,6 @@ const Payment = () => {
       </div>
     );
   }
-
-  const advanceAmount = Math.round(pkg.price * 0.3);
-  const travellers = parseInt(form.travellers) || 1;
-  const totalAdvance = advanceAmount * travellers;
-
-  const loadRazorpayScript = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (window.Razorpay) {
-        resolve(true);
-        return;
-      }
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      alert("Please login first");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        throw new Error("Failed to load Razorpay SDK");
-      }
-
-      const res = await fetch(`${API_BASE}/payment/create-order`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ packageId: id }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to create order");
-      }
-
-      const data = await res.json();
-      const order = data.data || data;
-
-      if (!order?.id) {
-        throw new Error("Invalid order response");
-      }
-
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: "INR",
-        name: "Sankhnadam Tours",
-        description: `Advance Booking – ${pkg.title}`,
-        order_id: order.id,
-        prefill: {
-          name: form.name,
-          email: form.email,
-          contact: form.phone,
-        },
-        handler: async function (response: any) {
-          try {
-            const verifyRes = await fetch(`${API_BASE}/payment/verify-payment`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
-
-            const result = await verifyRes.json();
-
-            if (verifyRes.status === 200) {
-              saveBooking({
-                id: crypto.randomUUID(),
-                packageId: pkg.id,
-                packageTitle: pkg.title,
-                packageImage: pkg.image,
-                location: pkg.location,
-                duration: pkg.duration,
-                name: form.name,
-                email: form.email,
-                phone: form.phone,
-                date: form.date,
-                travellers,
-                advancePaid: totalAdvance,
-                totalPrice: pkg.price * travellers,
-                bookedAt: new Date().toISOString(),
-              });
-              setSubmitted(true);
-            } else {
-              alert(result.message || "Payment verification failed ❌");
-            }
-          } catch {
-            alert("Payment verification failed. Please contact support.");
-          }
-        },
-        theme: { color: "#f97316" },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (response: any) {
-        alert(response.error.description);
-      });
-      rzp.open();
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (submitted) {
     return (
