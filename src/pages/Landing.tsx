@@ -113,7 +113,10 @@ const Landing = () => {
           <div className="text-center mt-10">
             <Link
               to="/packages"
-              className="inline-flex items-center px-6 py-3 rounded-lg bg-secondary text-secondary-foreground font-semibold text-sm hover:brightness-95 active:scale-[0.97] transition-all"
+              className="inline-flex items-center px-6 py-3 rounded-lg 
+                        bg-[hsl(348_52%_32%)] text-[hsl(36_33%_97%)] 
+                        font-semibold text-sm 
+                        hover:brightness-95 active:scale-[0.97] transition-all"
             >
               View All Packages →
             </Link>
