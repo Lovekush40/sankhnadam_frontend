@@ -9,19 +9,19 @@ import { CalendarDays, Users, MapPin, Clock, IndianRupee, Trash2 } from "lucide-
 export interface Booking {
   _id: string;
   packageId: string;
-  packageTitle: string;
-  packageImage: string;
-  location: string;
-  duration: string;
-  name: string;
-  email: string;
-  phone: string;
-  date: string;
-  travellers: number;
-  advancePaid: number;
-  totalPrice: number;
-  bookedAt: string;
-  status: string;
+  packageName: string;
+  packageImage?: string; // optional
+  location?: string;
+  duration?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  travelDate?: string;
+  persons?: number;
+  paidAmount?: number;
+  totalAmount?: number;
+  createdAt: string;
+  paymentStatus?: string;
 }
 
 const MyBookings = () => {
@@ -51,17 +51,13 @@ const MyBookings = () => {
     fetchBookings();
   }, []);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (_id: string) => {
     try {
-      // Optional: delete booking via API
       const token = localStorage.getItem("authToken");
-      await axios.delete(`${API_BASE}/bookings/${id}`, {
+      await axios.delete(`${API_BASE}/bookings/${_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      // Update frontend list
-      const updated = bookings.filter((b) => b._id !== id);
-      setBookings(updated);
+      setBookings(bookings.filter((b) => b._id !== _id));
     } catch (err) {
       console.error("Error deleting booking:", err);
     }
@@ -116,8 +112,8 @@ const MyBookings = () => {
                       {/* Image */}
                       <div className="sm:w-48 h-40 sm:h-auto flex-shrink-0">
                         <img
-                          src={booking.packageImage}
-                          alt={booking.packageTitle}
+                          src={booking.packageImage ?? "/default-package.jpg"}
+                          alt={booking.packageName}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -130,15 +126,19 @@ const MyBookings = () => {
                               to={`/packages/${booking.packageId}`}
                               className="font-display font-bold text-lg hover:text-primary transition-colors"
                             >
-                              {booking.packageTitle}
+                              {booking.packageName}
                             </Link>
                             <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
-                              <span className="flex items-center gap-1">
-                                <MapPin size={12} /> {booking.location}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock size={12} /> {booking.duration}
-                              </span>
+                              {booking.location && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin size={12} /> {booking.location}
+                                </span>
+                              )}
+                              {booking.duration && (
+                                <span className="flex items-center gap-1">
+                                  <Clock size={12} /> {booking.duration}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <button
@@ -153,32 +153,34 @@ const MyBookings = () => {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                           <div>
                             <p className="text-xs text-muted-foreground">Traveller</p>
-                            <p className="font-medium">{booking.name}</p>
+                            <p className="font-medium">{booking.name ?? "N/A"}</p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
                               <CalendarDays size={11} /> Tour Date
                             </p>
                             <p className="font-medium">
-                              {new Date(booking.date).toLocaleDateString("en-IN", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })}
+                              {booking.travelDate
+                                ? new Date(booking.travelDate).toLocaleDateString("en-IN", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })
+                                : "N/A"}
                             </p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
                               <Users size={11} /> Travellers
                             </p>
-                            <p className="font-medium">{booking.travellers}</p>
+                            <p className="font-medium">{booking.persons ?? 1}</p>
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground flex items-center gap-1">
                               <IndianRupee size={11} /> Advance Paid
                             </p>
                             <p className="font-medium text-primary">
-                              ₹{booking.advancePaid.toLocaleString("en-IN")}
+                              ₹{(booking.paidAmount ?? 0).toLocaleString("en-IN")}
                             </p>
                           </div>
                         </div>
@@ -186,14 +188,14 @@ const MyBookings = () => {
                         <div className="flex items-center justify-between pt-2 border-t border-border text-xs text-muted-foreground">
                           <span>
                             Booked on{" "}
-                            {new Date(booking.bookedAt).toLocaleDateString("en-IN", {
+                            {new Date(booking.createdAt).toLocaleDateString("en-IN", {
                               day: "numeric",
                               month: "long",
                               year: "numeric",
                             })}
                           </span>
                           <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                            {booking.status || "Confirmed"}
+                            {booking.paymentStatus?.toUpperCase() ?? "PENDING"}
                           </span>
                         </div>
                       </div>
