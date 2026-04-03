@@ -1,3 +1,4 @@
+// src/pages/Payment.tsx
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -6,11 +7,37 @@ import ScrollReveal from "@/components/ScrollReveal";
 import { ShieldCheck, CreditCard } from "lucide-react";
 import axios from "axios";
 
-const Payment = () => {
-  const { id } = useParams(); // packageId
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
-  const [pkg, setPkg] = useState<any>(null);
+interface ImportMetaEnv {
+  readonly VITE_API_BASE_URL: string;
+  readonly VITE_RAZORPAY_KEY_ID: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
+interface Package {
+  id: string;
+  title: string;
+  price: number;
+  image: string;
+  duration: string;
+  location: string;
+  startDates: string[];
+}
+
+const Payment = () => {
+  const { id } = useParams();
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+  const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+  const [pkg, setPkg] = useState<Package | null>(null);
   const [loadingPkg, setLoadingPkg] = useState(true);
 
   const [form, setForm] = useState({
@@ -21,9 +48,9 @@ const Payment = () => {
     travellers: "1",
   });
 
+  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch package details
   useEffect(() => {
     const fetchPackage = async () => {
       try {
@@ -38,25 +65,23 @@ const Payment = () => {
     fetchPackage();
   }, [id]);
 
-  if (loadingPkg) {
-    return <div className="min-h-screen flex items-center justify-center">Loading package...</div>;
-  }
+  if (loadingPkg) return <div className="min-h-screen flex items-center justify-center">Loading package...</div>;
 
-  if (!pkg) {
+  if (!pkg)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="font-display text-2xl font-bold mb-2">Package not found</h1>
-          <Link to="/packages" className="text-primary underline">← Back to packages</Link>
+          <Link to="/packages" className="text-primary underline">
+            ← Back to packages
+          </Link>
         </div>
       </div>
     );
-  }
 
   const travellers = parseInt(form.travellers) || 1;
   const totalAdvance = Math.round(pkg.price * 0.3) * travellers;
 
-  // Handle Razorpay payment
   const handlePayment = async () => {
     try {
       const token = localStorage.getItem("authToken");
@@ -67,7 +92,6 @@ const Payment = () => {
 
       setLoading(true);
 
-      // Create order on backend
       const res = await fetch(`${API_BASE}/payment/create-order`, {
         method: "POST",
         headers: {
@@ -81,22 +105,20 @@ const Payment = () => {
       });
 
       if (!res.ok) throw new Error("Failed to create order");
+
       const data = await res.json();
       const order = data.data || data;
 
       if (!order?.id) throw new Error("Invalid order response");
 
-      // Razorpay options
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: RAZORPAY_KEY,
         amount: order.amount,
         currency: "INR",
         name: "Sankhnadam Tours",
         description: "Advance Booking",
         order_id: order.id,
         handler: async function (response: any) {
-          console.log("RAZORPAY RESPONSE:", response);
-          // Verify payment
           const verifyRes = await fetch(`${API_BASE}/payment/verify-payment`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -115,7 +137,7 @@ const Payment = () => {
 
           const result = await verifyRes.json();
           if (verifyRes.status === 200) {
-            window.location.href = "/#/success"; // redirect to success page
+            setSubmitted(true);
           } else {
             alert(result.message || "Payment verification failed ❌");
           }
@@ -124,9 +146,7 @@ const Payment = () => {
       };
 
       const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (response: any) {
-        alert(response.error.description);
-      });
+      rzp.on("payment.failed", (response: any) => alert(response.error.description));
       rzp.open();
     } catch (err: any) {
       console.error(err);
@@ -135,6 +155,33 @@ const Payment = () => {
       setLoading(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center pt-16">
+          <ScrollReveal>
+            <div className="text-center max-w-md mx-auto px-4">
+              <span className="text-5xl block mb-4">🎉</span>
+              <h1 className="font-display text-2xl font-bold mb-2">Booking Confirmed!</h1>
+              <p className="text-muted-foreground mb-6">
+                Your advance of ₹{totalAdvance.toLocaleString("en-IN")} for <strong>{pkg.title}</strong> has been received.
+                We'll send confirmation details to your email. Radhe Radhe! 🙏
+              </p>
+              <Link
+                to="/packages"
+                className="inline-flex items-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm"
+              >
+                Browse More Packages
+              </Link>
+            </div>
+          </ScrollReveal>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -155,6 +202,7 @@ const Payment = () => {
                 <h2 className="font-display text-lg font-bold flex items-center gap-2">
                   <CreditCard size={18} /> Traveller Details
                 </h2>
+
                 <div>
                   <label className="text-sm font-medium block mb-1">Full Name</label>
                   <input
@@ -165,6 +213,7 @@ const Payment = () => {
                     placeholder="Your full name"
                   />
                 </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium block mb-1">Email</label>
@@ -188,6 +237,7 @@ const Payment = () => {
                     />
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium block mb-1">Preferred Date</label>
@@ -198,13 +248,14 @@ const Payment = () => {
                       className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       <option value="">Select date</option>
-                      {pkg.startDates.map((d: string) => (
+                      {pkg.startDates.map((d) => (
                         <option key={d} value={d}>
                           {new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
                         </option>
                       ))}
                     </select>
                   </div>
+
                   <div>
                     <label className="text-sm font-medium block mb-1">Travellers</label>
                     <input
