@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { tourPackages } from "@/data/packages";
 import { usePackages } from "@/hooks/usePackages";
 import PackageCard from "@/components/PackageCard";
 import ScrollReveal from "@/components/ScrollReveal";
@@ -11,58 +10,40 @@ const Landing = () => {
   const { packages, isLoading, error } = usePackages();
   const featured = packages.slice(0, 3);
 
-  if (isLoading) {
-    return <div className="text-center py-20">Loading packages...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center py-20 text-red-500">{error}</div>;
-  }
+  if (isLoading) return <div className="text-center py-20">Loading packages...</div>;
+  if (error) return <div className="text-center py-20 text-red-500">{error}</div>;
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <Navbar />
 
       {/* Hero */}
-      <section className="relative h-[90vh] min-h-130 flex items-end overflow-hidden p-3">
-        {/* <img
-          src={heroImg}
-          alt="Vrindavan temples at golden hour"
+      <section className="relative h-[90vh] min-h-[500px] flex items-end overflow-hidden px-3">
+        <img
+          src="https://merobrajdham.com/wp-content/uploads/al_opt_content/IMAGE/merobrajdham.com/wp-content/uploads/2025/04/Place-To-Visit-In-Brajdham-1.png.bv.webp?bv_host=merobrajdham.com"
+          alt="Braj Bhoomi"
           className="absolute inset-0 w-full h-full object-cover"
-        /> */}
-        <img src="https://merobrajdham.com/wp-content/uploads/al_opt_content/IMAGE/merobrajdham.com/wp-content/uploads/2025/04/Place-To-Visit-In-Brajdham-1.png.bv.webp?bv_host=merobrajdham.com" alt="art" className='absolute inset-0 w-full h-full object-cover'/>
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
 
         <div className="relative container pb-16 md:pb-24 z-10">
-         <h1
-            className="
-              animate-fade-up 
-              font-display 
-              text-3xl sm:text-4xl md:text-5xl lg:text-6xl 
-              font-bold 
-              text-white 
-              leading-tight 
-              max-w-2xl
-              drop-shadow-[0_30px_30px_rgba(0,0,0,0.6)]
-            "
-            style={{ lineHeight: 1.1 }}
-                  >
+          <h1 className="animate-fade-up font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-2xl drop-shadow-[0_30px_30px_rgba(0,0,0,0.6)]" style={{ lineHeight: 1.1 }}>
             Discover the Divine Lands of Braj Bhoomi
           </h1>
-          <p className="animate-fade-up stagger-2 text-gray-100 text-base md:text-lg mt-4 max-w-lg drop-shadow-lg">
+          <p className="animate-fade-up stagger-2 text-gray-100 text-base md:text-lg mt-4 max-w-md drop-shadow-lg">
             Spiritual tours to Vrindavan, Mathura, Barsana, Govardhan & Nandgaon — curated with love and devotion by Sanknadam Tours.
           </p>
           <div className="animate-fade-up stagger-3 flex flex-wrap gap-3 mt-6">
             <Link
               to="/packages"
-              className="inline-flex items-center px-6 py-3 rounded-lg bg-primary text-primary-foreground  bg-orange-500/90 text-white font-semibold text-sm hover:brightness-110 active:scale-[0.97] transition-all"
+              className="inline-flex items-center px-6 py-3 rounded-lg bg-orange-500/90 text-white font-semibold text-sm hover:brightness-110 active:scale-[0.97] transition-all"
             >
               Explore Packages
             </Link>
             <Link
               to="/contact"
-              className="inline-flex items-center px-6 py-3 rounded-lg border border-primary-foreground/40 text-primary-foreground font-semibold  text-white/80 text-sm hover:bg-primary-foreground/10 active:scale-[0.97] transition-all"
+              className="inline-flex items-center px-6 py-3 rounded-lg border border-white/40 text-white/80 font-semibold text-sm hover:bg-white/10 active:scale-[0.97] transition-all"
             >
               Contact Us
             </Link>
@@ -72,7 +53,7 @@ const Landing = () => {
 
       {/* Stats */}
       <ScrollReveal>
-        <section className="bg-card py-10 p-3">
+        <section className="bg-card py-10 px-3">
           <div className="container grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {[
               { num: "1,200+", label: "Happy Travellers" },
@@ -92,17 +73,16 @@ const Landing = () => {
       {/* Featured Packages */}
       <section className="py-16 md:py-24 px-3">
         <div className="container">
-            <ScrollReveal>
+          <ScrollReveal>
             <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground text-center mb-2">
               Popular Tour Packages
             </h2>
-
-            <DimondLine className="mx-auto" />
-
+            <DimondLine className="mx-auto mb-4" />
             <p className="text-muted-foreground text-center mb-10 max-w-md mx-auto">
               Hand-picked spiritual journeys through the holiest sites of Braj
             </p>
           </ScrollReveal>
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {featured.map((pkg, i) => (
               <ScrollReveal key={pkg.id} delay={i * 100}>
@@ -110,13 +90,11 @@ const Landing = () => {
               </ScrollReveal>
             ))}
           </div>
+
           <div className="text-center mt-10">
             <Link
               to="/packages"
-              className="inline-flex items-center px-6 py-3 rounded-lg 
-                        bg-[hsl(348_52%_32%)] text-[hsl(36_33%_97%)] 
-                        font-semibold text-sm 
-                        hover:brightness-95 active:scale-[0.97] transition-all"
+              className="inline-flex items-center px-6 py-3 rounded-lg bg-[hsl(348_52%_32%)] text-[hsl(36_33%_97%)] font-semibold text-sm hover:brightness-95 active:scale-[0.97] transition-all"
             >
               View All Packages →
             </Link>

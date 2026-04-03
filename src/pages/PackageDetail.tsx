@@ -17,17 +17,17 @@ const PackageDetail = () => {
   const { id } = useParams();
   const { packages, isLoading } = usePackages();
 
-if (isLoading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p>Loading package...</p>
-    </div>
-  );
-}
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Loading package...</p>
+      </div>
+    );
+  }
 
-const pkg = packages.find((p) => p.id === id);
+  const pkg = packages.find((p) => p.id === id);
 
-  if (!pkg) { 
+  if (!pkg) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-3">
         <div className="text-center">
@@ -45,7 +45,7 @@ const pkg = packages.find((p) => p.id === id);
       <Navbar />
 
       {/* Hero Image */}
-      <div className="relative h-[50vh] min-h-[350px] ">
+      <div className="relative h-[50vh] min-h-[350px] w-full">
         <img src={pkg.image} alt={pkg.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
@@ -164,14 +164,16 @@ const pkg = packages.find((p) => p.id === id);
           </div>
 
           {/* Sidebar */}
-          <div>
+          <div className="lg:col-span-1">
             <ScrollReveal>
-              <div className="bg-white rounded-lg p-6 md:p-8  border-2 shadow-2xl border-gray-200 sticky top-20 space-y-5">
+              <div className="bg-white rounded-lg p-6 md:p-8 border-2 shadow-2xl border-gray-200 sticky top-6 space-y-5">
                 {/* Price */}
                 <div>
                   <div className="flex items-end gap-3">
                     <span className="font-display text-3xl font-bold text-orange-600">₹{pkg.price.toLocaleString("en-IN")}</span>
-                    <span className="text-sm text-gray-500 line-through mb-1">₹{pkg.originalPrice.toLocaleString("en-IN")}</span>
+                    {pkg.originalPrice > pkg.price && (
+                      <span className="text-sm text-gray-500 line-through mb-1">₹{pkg.originalPrice.toLocaleString("en-IN")}</span>
+                    )}
                   </div>
                   <p className="text-xs text-gray-600">per person (taxes included)</p>
                 </div>
@@ -189,7 +191,7 @@ const pkg = packages.find((p) => p.id === id);
                 </div>
 
                 {/* Timing */}
-                <div className="text-sm text-gray-700 r border-gray-200 rounded-lg p-3 flex items-center gap-2">
+                <div className="text-sm text-gray-700 border-gray-200 rounded-lg p-3 flex items-center gap-2">
                   <p><strong>Timing:</strong> {pkg.timing}</p>
                 </div>
 
