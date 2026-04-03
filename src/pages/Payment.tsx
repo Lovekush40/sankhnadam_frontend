@@ -1,15 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { tourPackages } from "@/data/packages";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 import { ShieldCheck, CreditCard } from "lucide-react";
+import axios from "axios";
 
 const Payment = () => {
-  const { id } = useParams(); // packageId
-  const pkg = tourPackages.find((p) => p.id === id);
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+  const { id } = useParams();
+  const [pkg, setPkg] = useState<any>(null);
+  const [loadingPkg, setLoadingPkg] = useState(true);
 
   const [form, setForm] = useState({
     name: "",
@@ -22,18 +22,32 @@ const Payment = () => {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  if (!pkg) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="font-display text-2xl font-bold mb-2">Package not found</h1>
-          <Link to="/packages" className="text-primary underline">
-            ← Back to packages
-          </Link>
-        </div>
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+  useEffect(() => {
+    const fetchPackage = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/packages/${id}`);
+        setPkg(res.data.data);
+      } catch (err) {
+        console.error("Package fetch error:", err);
+      } finally {
+        setLoadingPkg(false);
+      }
+    };
+    fetchPackage();
+  }, [id]);
+
+  if (loadingPkg) return <div className="min-h-screen flex items-center justify-center">Loading package...</div>;
+
+  if (!pkg) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h1 className="font-display text-2xl font-bold mb-2">Package not found</h1>
+        <Link to="/packages" className="text-primary underline">← Back to packages</Link>
       </div>
-    );
-  }
+    </div>
+  );
 
   const travellers = parseInt(form.travellers) || 1;
   const totalAdvance = Math.round(pkg.price * 0.3) * travellers;
