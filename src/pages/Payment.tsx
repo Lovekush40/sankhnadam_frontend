@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
-import { ShieldCheck, CreditCard, Users, Calendar } from "lucide-react";
+import {
+  ShieldCheck,
+  CreditCard,
+  Users,
+  Calendar,
+  MapPin,
+  Clock,
+  IndianRupee,
+  Loader2,
+} from "lucide-react";
 
 declare global {
   interface Window {
@@ -11,9 +20,21 @@ declare global {
   }
 }
 
+interface PackageInfo {
+  _id: string;
+  title: string;
+  price: number;
+  location?: string;
+  duration?: string;
+  image?: string;
+}
+
 const Payment = () => {
   const { id } = useParams();
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+  const [pkg, setPkg] = useState<PackageInfo | null>(null);
+  const [pkgLoading, setPkgLoading] = useState(true);
 
   const [form, setForm] = useState({
     name: "",
@@ -24,16 +45,33 @@ const Payment = () => {
   });
   const [loading, setLoading] = useState(false);
 
-  // Set by backend after create-order — used in summary panel
-  const [amountInfo, setAmountInfo] = useState<{
-    totalAmount: number;
-    advanceAmount: number;
-  } | null>(null);
+  const travellers = Math.max(1, parseInt(form.travellers) || 1);
 
-  const travellers = parseInt(form.travellers) || 1;
+  // ── Derived amounts (live, from pkg.price × travellers) ────────────────────
+  const totalAmount  = pkg ? pkg.price * travellers : 0;
+  const advanceAmount = pkg ? Math.round(totalAmount * 0.3) : 0;
+  const balanceAmount = totalAmount - advanceAmount;
 
-  const loadRazorpayScript = (): Promise<boolean> => {
-    return new Promise((resolve) => {
+  // ── Fetch package info on mount ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!id) return;
+    const fetchPkg = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/packages/${id}`);
+        const data = await res.json();
+        setPkg(data.data || data);
+      } catch (err) {
+        console.error("Failed to fetch package:", err);
+      } finally {
+        setPkgLoading(false);
+      }
+    };
+    fetchPkg();
+  }, [id]);
+
+  // ── Razorpay script loader ──────────────────────────────────────────────────
+  const loadRazorpayScript = (): Promise<boolean> =>
+    new Promise((resolve) => {
       if (window.Razorpay) { resolve(true); return; }
       const script = document.createElement("script");
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -41,8 +79,8 @@ const Payment = () => {
       script.onerror = () => resolve(false);
       document.body.appendChild(script);
     });
-  };
 
+  // ── Submit ──────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -58,7 +96,6 @@ const Payment = () => {
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) throw new Error("Failed to load Razorpay SDK");
 
-      // ✅ Send persons to backend so it calculates correct amount
       const res = await fetch(`${API_BASE}/payment/create-order`, {
         method: "POST",
         headers: {
@@ -75,18 +112,12 @@ const Payment = () => {
 
       if (!order?.id) throw new Error("Invalid order response");
 
-      // ✅ Backend now returns totalAmount & advanceAmount — show in summary
-      setAmountInfo({
-        totalAmount: order.totalAmount,
-        advanceAmount: order.advanceAmount,
-      });
-
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: order.amount,         // paise, from Razorpay order
+        amount: order.amount,
         currency: "INR",
         name: "Sankhnadam Tours",
-        description: "Advance Booking",
+        description: `Advance – ${pkg?.title ?? "Tour Package"}`,
         order_id: order.id,
         prefill: {
           name: form.name,
@@ -118,11 +149,10 @@ const Payment = () => {
       };
 
       const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (response: any) {
+      rzp.on("payment.failed", (response: any) => {
         alert(response.error.description);
       });
       rzp.open();
-
     } catch (err: any) {
       console.error(err);
       alert(err.message || "Something went wrong");
@@ -131,168 +161,265 @@ const Payment = () => {
     }
   };
 
+  // ── Package loading skeleton ────────────────────────────────────────────────
+  if (pkgLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center pt-24">
+          <Loader2 className="animate-spin text-orange-500" size={32} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // ── Package not found ───────────────────────────────────────────────────────
+  if (!pkg) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center pt-24">
+          <div className="text-center">
+            <p className="text-2xl font-bold mb-2">Package not found</p>
+            <a href="/packages" className="text-orange-500 underline">
+              ← Back to packages
+            </a>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // ── Main render ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="pt-24 pb-16">
-        <div className="container max-w-3xl">
+      <div className="pt-24 pb-16 px-4">
+        <div className="max-w-3xl mx-auto">
+
+          {/* Header */}
           <ScrollReveal>
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-center mb-2">
+            <h1 className="font-display text-2xl md:text-3xl font-bold text-center mb-1 text-foreground">
               Complete Your Booking
             </h1>
-            <p className="text-muted-foreground text-center mb-10">
-              Pay a small advance to reserve your spot on this tour
+            <p className="text-center mb-10 text-sm text-muted-foreground">
+              Reserve your spot on{" "}
+              <span className="font-semibold text-foreground">{pkg.title}</span>
             </p>
           </ScrollReveal>
 
-          <div className="grid md:grid-cols-5 gap-8">
+          <div className="grid md:grid-cols-5 gap-6">
 
             {/* ── Left: Form ── */}
-            <ScrollReveal className="md:col-span-3">
+            <ScrollReveal className="md:col-span-3 order-2 md:order-1">
               <form
                 onSubmit={handleSubmit}
-                className="bg-card rounded-xl p-6 shadow-md border border-border space-y-5"
+                className="rounded-xl p-6 shadow-md border border-border bg-card space-y-4"
+                style={{ borderColor: "hsl(var(--border))" }}
               >
-                <h2 className="font-display text-lg font-bold flex items-center gap-2">
-                  <CreditCard size={18} className="text-primary" />
+                <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
+                  <CreditCard size={18} className="text-orange-500" />
                   Traveller Details
                 </h2>
 
+                {/* Name */}
                 <div>
-                  <label className="text-sm font-medium block mb-1">Full Name</label>
+                  <label className="text-sm font-medium block mb-1 text-foreground">
+                    Full Name
+                  </label>
                   <input
                     required
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition"
+                    className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 transition placeholder:text-muted-foreground"
                     placeholder="Your full name"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                {/* Email + Phone */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium block mb-1">Email</label>
+                    <label className="text-sm font-medium block mb-1 text-foreground">
+                      Email
+                    </label>
                     <input
                       required
                       type="email"
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition"
+                      className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 transition placeholder:text-muted-foreground"
                       placeholder="email@example.com"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium block mb-1">Phone</label>
+                    <label className="text-sm font-medium block mb-1 text-foreground">
+                      Phone
+                    </label>
                     <input
                       required
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition"
+                      className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 transition placeholder:text-muted-foreground"
                       placeholder="+91 98765 43210"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                {/* Date + Travellers */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium block mb-1">Preferred Date</label>
+                    <label className="text-sm font-medium block mb-1 text-foreground">
+                      Preferred Date
+                    </label>
                     <input
                       required
                       type="date"
                       value={form.date}
                       onChange={(e) => setForm({ ...form, date: e.target.value })}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition"
+                      className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 transition"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium block mb-1">Travellers</label>
+                    <label className="text-sm font-medium block mb-1 text-foreground">
+                      Travellers
+                    </label>
                     <input
                       type="number"
                       min={1}
                       max={10}
                       value={form.travellers}
-                      onChange={(e) => {
-                        setForm({ ...form, travellers: e.target.value });
-                        // Reset summary when travellers changes — stale amounts are misleading
-                        setAmountInfo(null);
-                      }}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring transition"
+                      onChange={(e) =>
+                        setForm({ ...form, travellers: e.target.value })
+                      }
+                      className="w-full rounded-lg border border-border bg-background text-foreground px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-orange-400 transition"
                     />
                   </div>
                 </div>
 
+                {/* Pay button */}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 active:scale-[0.97] transition-all mt-1 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full py-3 rounded-lg font-semibold text-sm transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-2"
+                  style={{
+                    backgroundColor: "#f97316",
+                    color: "#ffffff",
+                  }}
                 >
-                  {loading ? "Processing…" : "Pay Advance"}
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Processing…
+                    </>
+                  ) : (
+                    <>
+                      <IndianRupee size={15} />
+                      Pay ₹{advanceAmount.toLocaleString("en-IN")} Advance
+                    </>
+                  )}
                 </button>
 
                 <p className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
-                  <ShieldCheck size={13} />
-                  Secure payment via Razorpay • Remaining balance payable on tour day
+                  <ShieldCheck size={13} className="text-green-500" />
+                  Secure payment via Razorpay • Balance payable on tour day
                 </p>
               </form>
             </ScrollReveal>
 
             {/* ── Right: Summary ── */}
-            <ScrollReveal className="md:col-span-2" delay={100}>
-              <div className="bg-card rounded-xl shadow-md border border-border overflow-hidden">
-                <div className="p-5 space-y-4">
-                  <h3 className="font-display font-bold text-base">Booking Summary</h3>
+            <ScrollReveal className="md:col-span-2 order-1 md:order-2" delay={100}>
+              <div className="rounded-xl shadow-md border border-border bg-card overflow-hidden">
 
-                  {/* Meta */}
-                  <div className="space-y-2.5">
-                    {form.date && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar size={14} className="text-primary shrink-0" />
-                        <span>
-                          {new Date(form.date).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })}
-                        </span>
+                {/* Package image */}
+                {pkg.image && (
+                  <div className="relative h-40 w-full">
+                    <img
+                      src={pkg.image}
+                      alt={pkg.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-3 left-3 right-3">
+                      <p className="text-white font-bold text-sm leading-snug line-clamp-2">
+                        {pkg.title}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="p-4 space-y-4">
+
+                  {/* Package meta */}
+                  <div className="space-y-1.5">
+                    {pkg.location && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <MapPin size={12} className="text-orange-500 shrink-0" />
+                        {pkg.location}
                       </div>
                     )}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users size={14} className="text-primary shrink-0" />
-                      <span>{travellers} traveller{travellers > 1 ? "s" : ""}</span>
+                    {pkg.duration && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock size={12} className="text-orange-500 shrink-0" />
+                        {pkg.duration}
+                      </div>
+                    )}
+                    {form.date && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar size={12} className="text-orange-500 shrink-0" />
+                        {new Date(form.date).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Users size={12} className="text-orange-500 shrink-0" />
+                      {travellers} traveller{travellers > 1 ? "s" : ""}
                     </div>
                   </div>
 
-                  {/* Price breakdown */}
-                  <div className="border-t border-border pt-4 space-y-2 text-sm">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Total package</span>
+                  {/* Price breakdown — live, updates as travellers changes */}
+                  <div className="border-t border-border pt-3 space-y-2">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                       <span>
-                        {amountInfo
-                          ? `₹${amountInfo.totalAmount.toLocaleString("en-IN")}`
-                          : "—"}
+                        ₹{pkg.price.toLocaleString("en-IN")} × {travellers}
+                      </span>
+                      <span className="text-foreground font-medium">
+                        ₹{totalAmount.toLocaleString("en-IN")}
                       </span>
                     </div>
-                    <div className="flex justify-between font-semibold text-primary">
-                      <span>Advance to pay (30%)</span>
-                      <span>
-                        {amountInfo
-                          ? `₹${amountInfo.advanceAmount.toLocaleString("en-IN")}`
-                          : <span className="text-muted-foreground font-normal text-xs">Shown after checkout starts</span>}
+
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Advance (30%)</span>
+                      <span
+                        className="font-bold text-base"
+                        style={{ color: "#f97316" }}
+                      >
+                        ₹{advanceAmount.toLocaleString("en-IN")}
                       </span>
                     </div>
+
                     <div className="flex justify-between text-xs text-muted-foreground border-t border-border pt-2">
-                      <span>Balance due on tour day</span>
-                      <span>
-                        {amountInfo
-                          ? `₹${(amountInfo.totalAmount - amountInfo.advanceAmount).toLocaleString("en-IN")}`
-                          : "—"}
+                      <span>Balance on tour day</span>
+                      <span className="font-medium text-foreground">
+                        ₹{balanceAmount.toLocaleString("en-IN")}
                       </span>
                     </div>
                   </div>
 
-                  <div className="bg-primary/5 rounded-lg p-3 text-xs text-muted-foreground leading-relaxed">
-                    💡 Your advance secures the booking. The remaining balance is collected on the tour day. Radhe Radhe! 🙏
+                  {/* Info note */}
+                  <div
+                    className="rounded-lg p-3 text-xs text-muted-foreground leading-relaxed"
+                    style={{ backgroundColor: "rgba(249,115,22,0.07)" }}
+                  >
+                    💡 Advance secures your booking. Remaining paid on tour day. Radhe Radhe! 🙏
                   </div>
                 </div>
               </div>
