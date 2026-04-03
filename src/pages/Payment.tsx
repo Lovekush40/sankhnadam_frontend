@@ -7,7 +7,9 @@ import { ShieldCheck, CreditCard } from "lucide-react";
 import axios from "axios";
 
 const Payment = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // packageId
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
   const [pkg, setPkg] = useState<any>(null);
   const [loadingPkg, setLoadingPkg] = useState(true);
 
@@ -19,11 +21,9 @@ const Payment = () => {
     travellers: "1",
   });
 
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
-
+  // Fetch package details
   useEffect(() => {
     const fetchPackage = async () => {
       try {
@@ -38,20 +38,25 @@ const Payment = () => {
     fetchPackage();
   }, [id]);
 
-  if (loadingPkg) return <div className="min-h-screen flex items-center justify-center">Loading package...</div>;
+  if (loadingPkg) {
+    return <div className="min-h-screen flex items-center justify-center">Loading package...</div>;
+  }
 
-  if (!pkg) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="font-display text-2xl font-bold mb-2">Package not found</h1>
-        <Link to="/packages" className="text-primary underline">← Back to packages</Link>
+  if (!pkg) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="font-display text-2xl font-bold mb-2">Package not found</h1>
+          <Link to="/packages" className="text-primary underline">← Back to packages</Link>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   const travellers = parseInt(form.travellers) || 1;
   const totalAdvance = Math.round(pkg.price * 0.3) * travellers;
 
+  // Handle Razorpay payment
   const handlePayment = async () => {
     try {
       const token = localStorage.getItem("authToken");
@@ -81,6 +86,7 @@ const Payment = () => {
 
       if (!order?.id) throw new Error("Invalid order response");
 
+      // Razorpay options
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: order.amount,
@@ -89,6 +95,7 @@ const Payment = () => {
         description: "Advance Booking",
         order_id: order.id,
         handler: async function (response: any) {
+          console.log("RAZORPAY RESPONSE:", response);
           // Verify payment
           const verifyRes = await fetch(`${API_BASE}/payment/verify-payment`, {
             method: "POST",
@@ -108,7 +115,7 @@ const Payment = () => {
 
           const result = await verifyRes.json();
           if (verifyRes.status === 200) {
-            setSubmitted(true);
+            window.location.href = "/#/success"; // redirect to success page
           } else {
             alert(result.message || "Payment verification failed ❌");
           }
@@ -128,33 +135,6 @@ const Payment = () => {
       setLoading(false);
     }
   };
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center pt-16">
-          <ScrollReveal>
-            <div className="text-center max-w-md mx-auto px-4">
-              <span className="text-5xl block mb-4">🎉</span>
-              <h1 className="font-display text-2xl font-bold mb-2">Booking Confirmed!</h1>
-              <p className="text-muted-foreground mb-6">
-                Your advance of ₹{totalAdvance.toLocaleString("en-IN")} for <strong>{pkg.title}</strong> has been received.
-                We'll send confirmation details to your email. Radhe Radhe! 🙏
-              </p>
-              <Link
-                to="/packages"
-                className="inline-flex items-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold text-sm"
-              >
-                Browse More Packages
-              </Link>
-            </div>
-          </ScrollReveal>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen">
@@ -218,13 +198,9 @@ const Payment = () => {
                       className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       <option value="">Select date</option>
-                      {pkg.startDates.map((d) => (
+                      {pkg.startDates.map((d: string) => (
                         <option key={d} value={d}>
-                          {new Date(d).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })}
+                          {new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
                         </option>
                       ))}
                     </select>
