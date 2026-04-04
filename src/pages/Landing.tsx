@@ -6,12 +6,13 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import DimondLine from "@/components/ui/DimondLine";
 import { ChevronRight, Sparkles } from "lucide-react";
+import Loader from "@/components/Loader";
 
 const Landing = () => {
   const { packages, isLoading, error } = usePackages();
   const featured = packages.slice(0, 3);
 
-  if (isLoading) return <div className="text-center py-20">Loading packages...</div>;
+  if (isLoading) return <Loader />
   if (error) return <div className="text-center py-20 text-red-500">{error}</div>;
 
   return (
