@@ -15,6 +15,7 @@ import {
   MessageSquare,
   ChevronLeft,
 } from "lucide-react";
+import Loader from "@/components/Loader";
 
 const PackageDetail = () => {
   const { id } = useParams();
@@ -22,9 +23,7 @@ const PackageDetail = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading package...</p>
-      </div>
+      <Loader message="Loading package..."/>
     );
   }
 

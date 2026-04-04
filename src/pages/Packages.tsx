@@ -3,12 +3,13 @@ import Footer from "@/components/Footer";
 import { usePackages } from "@/hooks/usePackages";
 import PackageCard from "@/components/PackageCard";
 import ScrollReveal from "@/components/ScrollReveal";
+import Loader from "@/components/Loader";
 
 const Packages = () => {
   const { packages, isLoading, error } = usePackages();
 
   if (isLoading) {
-    return <div className="text-center py-20">Loading packages...</div>;
+    return <div className="text-center py-20"><Loader message="Loading Packages..."/></div>;
   }
 
   if (error) {
