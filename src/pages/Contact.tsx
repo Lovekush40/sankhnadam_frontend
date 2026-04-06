@@ -58,21 +58,22 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <Phone size={20} className="text-orange-600 mt-1" />
                   <div>
                     <h3 className="font-semibold text-sm text-gray-900">Phone</h3>
-                    <p className="text-gray-700 text-sm">+91 98765 43210</p>
+                    <p className="text-gray-700 text-sm">+91 8476068944</p>
+                    <p className="text-gray-700 text-sm">+91 9876543210</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Mail size={20} className="text-orange-600 mt-1" />
                   <div>
                     <h3 className="font-semibold text-sm text-gray-900">Email</h3>
-                    <p className="text-gray-700 text-sm">info@sanknadamtours.com</p>
+                    <p className="text-gray-700 text-sm">hemant812205@gmail.com</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <MapPin size={20} className="text-orange-600 mt-1" />
                   <div>
                     <h3 className="font-semibold text-sm text-gray-900">Office</h3>
-                    <p className="text-gray-700 text-sm">Near Banke Bihari Temple, Vrindavan, Mathura, UP — 281121</p>
+                    <p className="text-gray-700 text-sm">anket barsana mathura</p>
                   </div>
                 </div>
 
