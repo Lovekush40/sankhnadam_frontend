@@ -26,7 +26,7 @@ const Footer = () => (
             <li>📍 Vrindavan, Mathura, UP — 281121</li>
             <li>📞 +91 9286145712</li>
             <li>📞 +91 8476068944</li>
-            <li>✉️ bhardwajy6013@gmail.com </li>
+            <li>✉️ bhardwajy613@gmail.com </li>
           </ul>
         </div>
       </div>
