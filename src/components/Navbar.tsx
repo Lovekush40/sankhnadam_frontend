@@ -34,7 +34,7 @@ const Navbar = () => {
                 />
               </div>
           <span className="font-display text-lg md:text-xl font-bold text-foreground tracking-tight">
-            Sankhnadam
+            Shankhnadam
           </span>
         </Link>
 
